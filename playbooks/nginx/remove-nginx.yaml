@@ -1,0 +1,33 @@
+---
+- name: Remove Nginx from multiple OS
+  hosts: all
+  become: true
+  tasks:
+    - name: Detect OS family
+      ansible.builtin.set_fact:
+        os_family: "{{ ansible_facts['os_family'] }}"
+
+    - name: Remove Nginx on Debian/Ubuntu
+      ansible.builtin.package:
+        name: nginx
+        state: absent
+      when: os_family == "Debian"
+
+    - name: Remove Nginx on RedHat/CentOS
+      ansible.builtin.package:
+        name: nginx
+        state: absent
+      when: os_family == "RedHat"
+
+    - name: Remove Nginx on SUSE
+      ansible.builtin.package:
+        name: nginx
+        state: absent
+      when: os_family == "Suse"
+
+    - name: Ensure Nginx service is stopped
+      ansible.builtin.service:
+        name: nginx
+        state: stopped
+        enabled: false
+      when: "'nginx' in ansible_facts.services"
