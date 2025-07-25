@@ -1,0 +1,33 @@
+---
+- name: Manage Nginx lifecycle across multiple OS
+  hosts: all
+  become: true
+  gather_facts: true
+
+  vars:
+    nginx_state: present  # Change to 'absent' to remove Nginx
+
+  tasks:
+    - name: Set OS family fact (optional, for clarity)
+      ansible.builtin.set_fact:
+        os_family: "{{ ansible_facts['os_family'] }}"
+
+    - name: Ensure package manager cache is updated (Debian only)
+      ansible.builtin.apt:
+        update_cache: yes
+      when:
+        - nginx_state == "present"
+        - os_family == "Debian"
+
+    - name: Manage Nginx package on all supported OS
+      ansible.builtin.package:
+        name: nginx
+        state: "{{ nginx_state }}"
+      when: os_family in ["Debian", "RedHat", "Suse"]
+
+    - name: Manage Nginx service state
+      ansible.builtin.service:
+        name: nginx
+        state: "{{ 'started' if nginx_state == 'present' else 'stopped' }}"
+        enabled: "{{ nginx_state == 'present' }}"
+      when: os_family in ["Debian", "RedHat", "Suse"]
